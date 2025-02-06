@@ -3,7 +3,9 @@ export interface Task {
     payload: Record<string, unknown>;
     createdAt: string;
     status: TaskStatus;
-    retryCount?: number;
+    retryCount: number;
+    lastError?: string;
+    lastProcessedAt?: string;
 }
 
 export enum TaskStatus {
@@ -17,4 +19,5 @@ export interface TaskError {
     message: string;
     code: string;
     timestamp: string;
+    retryCount: number;
 }

@@ -7,11 +7,52 @@ provider:
   name: aws
   runtime: nodejs18.x
   region: us-east-1
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - sqs:SendMessage
+            - sqs:ReceiveMessage
+            - sqs:DeleteMessage
+            - sqs:GetQueueUrl
+          Resource:
+            - !GetAtt MainQueue.Arn
+            - !GetAtt DeadLetterQueue.Arn
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+            - dynamodb:GetItem
+            - dynamodb:UpdateItem
+          Resource: !GetAtt TasksTable.Arn
 
-custom:
-  webpack:
-    webpackConfig: './webpack.config.js'
-    includeModules: true
+resources:
+  Resources:
+    MainQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:service}-main-queue
+        VisibilityTimeout: 30
+        RedrivePolicy:
+          deadLetterTargetArn: !GetAtt DeadLetterQueue.Arn
+          maxReceiveCount: 2
+
+    DeadLetterQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:service}-dlq
+
+    TasksTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-tasks
+        AttributeDefinitions:
+          - AttributeName: taskId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: taskId
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
 
 functions:
   submitTask:
@@ -20,3 +61,27 @@ functions:
       - http:
           path: tasks
           method: post
+    environment:
+      QUEUE_URL: !Ref MainQueue
+      TABLE_NAME: !Ref TasksTable
+
+  processTask:
+    handler: src/handlers/processTask.handler
+    events:
+      - sqs:
+          arn: !GetAtt MainQueue.Arn
+          batchSize: 1
+
+  monitorDLQ:
+    handler: src/handlers/monitorDLQ.handler
+    events:
+      - sqs:
+          arn: !GetAtt DeadLetterQueue.Arn
+          batchSize: 1
+
+  getTaskStatus:
+    handler: src/handlers/getTaskStatus.handler
+    events:
+      - http:
+          path: tasks/{taskId}
+          method: get
