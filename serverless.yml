@@ -85,3 +85,5 @@ functions:
       - http:
           path: tasks/{taskId}
           method: get
+    environment:
+      TABLE_NAME: !Ref TasksTable
