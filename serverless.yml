@@ -1,0 +1,22 @@
+service: fault-tolerant-system
+
+plugins:
+  - serverless-typescript
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+
+custom:
+  webpack:
+    webpackConfig: './webpack.config.js'
+    includeModules: true
+
+functions:
+  submitTask:
+    handler: src/handlers/submitTask.handler
+    events:
+      - http:
+          path: tasks
+          method: post

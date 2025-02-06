@@ -1,0 +1,13 @@
+node_modules/
+package-lock.json
+dist/
+build/
+.serverless/
+.idea/
+.vscode/
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db

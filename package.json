@@ -1,0 +1,27 @@
+{
+  "name": "fault-tolerant-system",
+  "version": "1.0.0",
+  "main": "handler.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "deploy": "serverless deploy",
+    "remove": "serverless remove"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.147",
+    "@types/aws-sdk": "^0.0.42",
+    "@types/node": "^22.13.1",
+    "serverless": "^4.6.1",
+    "serverless-typescript": "^0.0.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1692.0"
+  }
+}
