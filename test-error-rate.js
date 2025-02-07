@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 const API_ENDPOINT = 'https://wz30sthcpg.execute-api.us-east-1.amazonaws.com/dev/tasks';
-const TOTAL_TESTS = 20;
+const TOTAL_TESTS = 30;
 const DELAY_BETWEEN_REQUESTS = 1000;
 
 async function sleep(ms) {
@@ -35,7 +35,7 @@ async function runTest() {
     }
 
     console.log('\nЧекаємо 45 секунд на обробку задач...');
-    await sleep(45000); // Збільшимо час очікування для retry спроб
+    await sleep(45000);
 
     // Перевіряємо результати
     for (const taskId of tasks) {
@@ -56,7 +56,7 @@ async function runTest() {
                     break;
             }
 
-            console.log(`Задача ${taskId}: ${status} (Спроб: ${retryCount})`);
+            console.log(`Задача ${taskId}: ${status} (Retries: ${retryCount})`);
             await sleep(500);
 
         } catch (error) {
