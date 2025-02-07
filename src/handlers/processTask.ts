@@ -29,7 +29,7 @@ export const handler: SQSHandler = async (event) => {
         } catch (error) {
             console.error(`Error processing task ${task.taskId}:`, error);
 
-            if (approximateReceiveCount >= 3) {
+            if (approximateReceiveCount >= 2) {
                 await updateTaskStatus(
                     task.taskId,
                     TaskStatus.FAILED,
