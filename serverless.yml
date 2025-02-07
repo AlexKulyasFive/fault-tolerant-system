@@ -20,9 +20,8 @@ provider:
             - sqs:ReceiveMessage
             - sqs:DeleteMessage
             - sqs:GetQueueUrl
-          Resource:
-            - !GetAtt MainQueue.Arn
-            - !GetAtt DeadLetterQueue.Arn
+            - cloudwatch:PutMetricData
+          Resource: "*"
         - Effect: Allow
           Action:
             - dynamodb:PutItem

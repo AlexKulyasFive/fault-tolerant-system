@@ -14,6 +14,10 @@ export const handler: SQSHandler = async (event) => {
             // Оновлюємо статус на "PROCESSING"
             await updateTaskStatus(task.taskId, TaskStatus.PROCESSING);
 
+            if (task.payload.message === 'ERROR') {
+                throw new Error('Simulated error for testing');
+            }
+
             // Симулюємо обробку задачі
             if (shouldSimulateError()) {
                 throw new Error('Simulated processing error');
