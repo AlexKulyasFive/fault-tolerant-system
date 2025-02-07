@@ -40,7 +40,9 @@ export const handler: APIGatewayProxyHandler = async (event) => {
             statusCode: 200,
             body: JSON.stringify({
                 taskId: task.taskId,
-                message: 'Task submitted successfully'
+                status: task.status,
+                message: 'Task submitted successfully',
+                createdAt: task.createdAt
             })
         };
     } catch (error) {
