@@ -7,7 +7,8 @@
     "watch": "tsc -w",
     "clean": "rimraf ./dist",
     "deploy": "npm run build && serverless deploy\n",
-    "remove": "serverless remove"
+    "remove": "serverless remove",
+    "test:error-rate": "node test-error-rate.js"
   },
   "keywords": [],
   "author": "",
@@ -26,6 +27,7 @@
   },
   "dependencies": {
     "aws-sdk": "^2.1692.0",
+    "axios": "^1.7.9",
     "uuid": "^11.0.5"
   }
 }

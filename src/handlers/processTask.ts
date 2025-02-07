@@ -1,28 +1,31 @@
 import { SQSHandler } from 'aws-lambda';
-import { SQS, DynamoDB } from 'aws-sdk';
+import { DynamoDB } from 'aws-sdk';
 import { Task, TaskStatus } from '@/types';
-import { shouldSimulateError, calculateBackoff } from '@/utils/errorHandler';
+import { shouldSimulateError } from '@/utils/errorHandler';
 
-const sqs = new SQS();
 const dynamoDB = new DynamoDB.DocumentClient();
 
 export const handler: SQSHandler = async (event) => {
     for (const record of event.Records) {
         const task: Task = JSON.parse(record.body);
-        const retryCount = task.retryCount || 0;
+        const approximateReceiveCount = parseInt(
+            record.attributes.ApproximateReceiveCount
+        );
 
-        console.log(`Processing task ${task.taskId}, attempt ${retryCount + 1}`);
+        console.log(`Processing task ${task.taskId}, attempt ${approximateReceiveCount}`);
+
         try {
             // Оновлюємо статус на "PROCESSING"
             await updateTaskStatus(task.taskId, TaskStatus.PROCESSING);
 
+            // Перевіряємо чи це тестова помилка
             if (task.payload.message === 'ERROR') {
                 throw new Error('Simulated error for testing');
             }
 
-            // Симулюємо обробку задачі
+            // Симулюємо випадкову помилку з ймовірністю 30%
             if (shouldSimulateError()) {
-                throw new Error('Simulated processing error');
+                throw new Error('Simulated random processing error');
             }
 
             // Якщо обробка успішна
@@ -32,46 +35,45 @@ export const handler: SQSHandler = async (event) => {
         } catch (error) {
             console.error(`Error processing task ${task.taskId}:`, error);
 
-            const retryCount = (task.retryCount || 0) + 1;
-            const backoffTime = calculateBackoff(retryCount);
-
-            if (retryCount <= 2) { // Максимум 2 спроби
-                console.log(`Scheduling retry ${retryCount + 1} for task ${task.taskId} with backoff time ${backoffTime} ms`);
-
-                // Оновлюємо лічильник спроб
-                await dynamoDB.update({
-                    TableName: process.env.TABLE_NAME!,
-                    Key: { taskId: task.taskId },
-                    UpdateExpression: 'SET retryCount = :count, #status = :status',
-                    ExpressionAttributeNames: { '#status': 'status' },
-                    ExpressionAttributeValues: {
-                        ':count': retryCount,
-                        ':status': TaskStatus.FAILED
-                    }
-                }).promise();
-
-                // Відправляємо назад в чергу з затримкою
-                await sqs.sendMessage({
-                    QueueUrl: process.env.QUEUE_URL!,
-                    MessageBody: JSON.stringify({ ...task, retryCount }),
-                    DelaySeconds: Math.min(Math.floor(backoffTime / 1000), 900) // Максимум 15 хвилин
-                }).promise();
-            } else {
-                // Задача автоматично потрапить в DLQ після перевищення maxReceiveCount
+            // Перевіряємо чи це остання спроба (maxReceiveCount = 3)
+            if (approximateReceiveCount >= 3) {
+                console.log(`Task ${task.taskId} failed permanently after ${approximateReceiveCount} attempts`);
                 await updateTaskStatus(task.taskId, TaskStatus.FAILED);
+                // Не кидаємо помилку - повідомлення буде видалено з черги і переміщено в DLQ
+                return;
             }
 
-            throw error; // Перекидаємо помилку, щоб повідомлення не було видалено з черги
+            // Якщо це не остання спроба
+            await updateTaskStatus(
+                task.taskId,
+                TaskStatus.RETRYING,
+                approximateReceiveCount
+            );
+
+            // Кидаємо помилку щоб SQS повторно обробив повідомлення
+            throw error;
         }
     }
 };
 
-async function updateTaskStatus(taskId: string, status: TaskStatus): Promise<void> {
-    await dynamoDB.update({
+async function updateTaskStatus(
+    taskId: string,
+    status: TaskStatus,
+    retryCount?: number
+): Promise<void> {
+    const updateParams: any = {
         TableName: process.env.TABLE_NAME!,
         Key: { taskId },
         UpdateExpression: 'SET #status = :status',
         ExpressionAttributeNames: { '#status': 'status' },
         ExpressionAttributeValues: { ':status': status }
-    }).promise();
+    };
+
+    // Додаємо лічильник спроб, якщо він переданий
+    if (retryCount !== undefined) {
+        updateParams.UpdateExpression += ', retryCount = :retryCount';
+        updateParams.ExpressionAttributeValues[':retryCount'] = retryCount;
+    }
+
+    await dynamoDB.update(updateParams).promise();
 }

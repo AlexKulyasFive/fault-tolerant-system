@@ -40,7 +40,7 @@ resources:
         VisibilityTimeout: 30
         RedrivePolicy:
           deadLetterTargetArn: !GetAtt DeadLetterQueue.Arn
-          maxReceiveCount: 2
+          maxReceiveCount: 3
 
     DeadLetterQueue:
       Type: AWS::SQS::Queue
