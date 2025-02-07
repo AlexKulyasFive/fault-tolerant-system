@@ -9,7 +9,9 @@ const dynamoDB = new DynamoDB.DocumentClient();
 export const handler: SQSHandler = async (event) => {
     for (const record of event.Records) {
         const task: Task = JSON.parse(record.body);
+        const retryCount = task.retryCount || 0;
 
+        console.log(`Processing task ${task.taskId}, attempt ${retryCount + 1}`);
         try {
             // Оновлюємо статус на "PROCESSING"
             await updateTaskStatus(task.taskId, TaskStatus.PROCESSING);
@@ -34,6 +36,8 @@ export const handler: SQSHandler = async (event) => {
             const backoffTime = calculateBackoff(retryCount);
 
             if (retryCount <= 2) { // Максимум 2 спроби
+                console.log(`Scheduling retry ${retryCount + 1} for task ${task.taskId} with backoff time ${backoffTime} ms`);
+
                 // Оновлюємо лічильник спроб
                 await dynamoDB.update({
                     TableName: process.env.TABLE_NAME!,

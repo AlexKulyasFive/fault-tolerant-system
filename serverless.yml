@@ -21,6 +21,8 @@ provider:
             - sqs:DeleteMessage
             - sqs:GetQueueUrl
             - cloudwatch:PutMetricData
+            - cloudwatch:GetMetricStatistics
+            - cloudwatch:ListMetrics
           Resource: "*"
         - Effect: Allow
           Action:
