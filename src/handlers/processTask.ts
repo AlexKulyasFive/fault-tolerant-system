@@ -12,67 +12,69 @@ export const handler: SQSHandler = async (event) => {
             record.attributes.ApproximateReceiveCount
         );
 
-        console.log(`Processing task ${task.taskId}, attempt ${approximateReceiveCount}`);
-
         try {
-            // Оновлюємо статус на "PROCESSING"
             await updateTaskStatus(task.taskId, TaskStatus.PROCESSING);
 
-            // Перевіряємо чи це тестова помилка
             if (task.payload.message === 'ERROR') {
                 throw new Error('Simulated error for testing');
             }
 
-            // Симулюємо випадкову помилку з ймовірністю 30%
             if (shouldSimulateError()) {
                 throw new Error('Simulated random processing error');
             }
 
-            // Якщо обробка успішна
             await updateTaskStatus(task.taskId, TaskStatus.COMPLETED);
             console.log(`Task ${task.taskId} completed successfully`);
 
         } catch (error) {
             console.error(`Error processing task ${task.taskId}:`, error);
 
-            // Перевіряємо чи це остання спроба (maxReceiveCount = 3)
             if (approximateReceiveCount >= 3) {
-                console.log(`Task ${task.taskId} failed permanently after ${approximateReceiveCount} attempts`);
-                await updateTaskStatus(task.taskId, TaskStatus.FAILED);
-                // Не кидаємо помилку - повідомлення буде видалено з черги і переміщено в DLQ
-                return;
+                await updateTaskStatus(
+                    task.taskId,
+                    TaskStatus.FAILED,
+                    approximateReceiveCount,
+                    error as Error
+                );
+            } else {
+                await updateTaskStatus(
+                    task.taskId,
+                    TaskStatus.RETRYING,
+                    approximateReceiveCount,
+                    error as Error
+                );
+                throw error; // Перезапускаємо обробку
             }
-
-            // Якщо це не остання спроба
-            await updateTaskStatus(
-                task.taskId,
-                TaskStatus.RETRYING,
-                approximateReceiveCount
-            );
-
-            // Кидаємо помилку щоб SQS повторно обробив повідомлення
-            throw error;
         }
     }
 };
 
+
 async function updateTaskStatus(
     taskId: string,
     status: TaskStatus,
-    retryCount?: number
+    retryCount?: number,
+    error?: Error
 ): Promise<void> {
     const updateParams: any = {
         TableName: process.env.TABLE_NAME!,
         Key: { taskId },
-        UpdateExpression: 'SET #status = :status',
+        UpdateExpression: 'SET #status = :status, lastProcessedAt = :now',
         ExpressionAttributeNames: { '#status': 'status' },
-        ExpressionAttributeValues: { ':status': status }
+        ExpressionAttributeValues: {
+            ':status': status,
+            ':now': new Date().toISOString()
+        }
     };
 
-    // Додаємо лічильник спроб, якщо він переданий
     if (retryCount !== undefined) {
         updateParams.UpdateExpression += ', retryCount = :retryCount';
         updateParams.ExpressionAttributeValues[':retryCount'] = retryCount;
+    }
+
+    if (error) {
+        updateParams.UpdateExpression += ', lastError = :error';
+        updateParams.ExpressionAttributeValues[':error'] = error.message;
     }
 
     await dynamoDB.update(updateParams).promise();

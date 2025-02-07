@@ -79,9 +79,9 @@ curl https://your-api-url/dev/tasks/{taskId}
 
 3. **Випадкові помилки**
     - Система має 30% ймовірність помилки для будь-якої задачі
-    - Можна протестувати масово за допомогою скрипта:
+    - Можна протестувати масово за допомогою скрипта (підставити свій ендпоінт fault-tolerant-system/test-error-rate.js):
    ```bash
-   node test-error-rate.js
+    npm run test:error-rate
    ```
 
 ## Моніторинг та логи
