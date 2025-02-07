@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "deploy": "serverless deploy",
+    "deploy": "npm run build && serverless deploy\n",
     "remove": "serverless remove"
   },
   "keywords": [],
