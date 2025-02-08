@@ -1,8 +1,8 @@
 # Fault-Tolerant Task Processing System
 
-Відмовостійка система обробки задач, побудована на AWS Lambda, SQS та DynamoDB.
+A fault-tolerant task processing system built on AWS Lambda, SQS, and DynamoDB.
 
-## Архітектура
+## Architecture
 
 ```ascii
 ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
@@ -19,92 +19,92 @@
                     └──────────────┘     └──────────────┘
 ```
 
-### Компоненти системи:
-- **API Gateway**: Приймає HTTP запити для створення та перевірки статусу задач
-- **Main Queue**: Основна черга для обробки задач
-- **Dead Letter Queue**: Черга для задач, які не вдалося обробити після декількох спроб
-- **Lambda Worker**: Обробляє задачі та керує retry-логікою
-- **DynamoDB**: Зберігає стан та інформацію про задачі
+### System Components:
+- **API Gateway**: Accepts HTTP requests for task creation and status checking
+- **Main Queue**: Primary queue for task processing
+- **Dead Letter Queue**: Queue for tasks that failed after multiple attempts
+- **Lambda Worker**: Processes tasks and manages retry logic
+- **DynamoDB**: Stores task state and information
 
-## Встановлення та розгортання
+## Installation and Deployment
 
-### Передумови
-- Node.js 18.x або новіше
-- AWS CLI налаштований з відповідними credentials
+### Prerequisites
+- Node.js 18.x or newer
+- AWS CLI configured with appropriate credentials
 - Serverless Framework
 
-### Кроки встановлення
+### Installation Steps
 
-1. Встановіть залежності:
+1. Install dependencies:
 ```bash
 npm install
 ```
 
-2. Розгорніть систему:
+2. Deploy the system:
 ```bash
 npm run deploy
 ```
 
-## Тестування
+## Testing
 
-### 1. Створення нової задачі
+### 1. Creating a New Task
 
 ```bash
-# Успішний сценарій
+# Success scenario
 curl -X POST https://your-api-url/dev/tasks \
 -H "Content-Type: application/json" \
 -d '{"message": "SUCCESS"}'
 
-# Сценарій з помилкою
+# Error scenario
 curl -X POST https://your-api-url/dev/tasks \
 -H "Content-Type: application/json" \
 -d '{"message": "ERROR"}'
 ```
 
-### 2. Перевірка статусу задачі
+### 2. Checking Task Status
 
 ```bash
 curl https://your-api-url/dev/tasks/{taskId}
 ```
 
-### Сценарії тестування
+### Test Scenarios
 
-1. **Успішна обробка**
-    - Відправте задачу з `"message": "SUCCESS"`
-    - Очікуваний результат: `status: "COMPLETED"`
+1. **Successful Processing**
+   - Send a task with `"message": "SUCCESS"`
+   - Expected result: `status: "COMPLETED"`
 
-2. **Симульована помилка**
-    - Відправте задачу з `"message": "ERROR"`
-    - Очікуваний результат: `status: "FAILED"` після 2 спроб
+2. **Simulated Error**
+   - Send a task with `"message": "ERROR"`
+   - Expected result: `status: "FAILED"` after 2 attempts
 
-3. **Випадкові помилки**
-    - Система має 30% ймовірність помилки для будь-якої задачі
-    - Можна протестувати масово за допомогою скрипта (підставити свій ендпоінт fault-tolerant-system/test-error-rate.js):
+3. **Random Errors**
+   - System has a 30% probability of error for any task
+   - Can be tested in bulk using the script (insert your endpoint in fault-tolerant-system/test-error-rate.js):
    ```bash
     npm run test:error-rate
    ```
 
-## Моніторинг та логи
+## Monitoring and Logs
 
-- CloudWatch Logs для кожної Lambda функції
-- CloudWatch Metrics для SQS черг
-- DynamoDB записи для відстеження статусу задач
+- CloudWatch Logs for each Lambda function
+- CloudWatch Metrics for SQS queues
+- DynamoDB records for task status tracking
 
-## Особливості та обмеження
+## Features and Limitations
 
-- Максимум 2 повторні спроби для кожної задачі
-- Експоненційний backoff між спробами
-- 30% ймовірність симульованої помилки
-- Максимальний час затримки повторної спроби - 15 хвилин
+- Maximum of 2 retry attempts per task
+- Exponential backoff between attempts
+- 30% probability of simulated error
+- Maximum retry delay of 15 minutes
 
-## Видалення системи
+## System Removal
 
-Для видалення всіх ресурсів:
+To remove all resources:
 ```bash
 npm run remove
 ```
 
-## Технічний стек
+## Tech Stack
 
 - TypeScript
 - AWS Lambda
