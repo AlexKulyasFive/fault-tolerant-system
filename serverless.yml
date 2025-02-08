@@ -46,6 +46,7 @@ resources:
       Type: AWS::SQS::Queue
       Properties:
         QueueName: ${self:service}-dlq
+        MessageRetentionPeriod: 1209600  # 14 днів
 
     TasksTable:
       Type: AWS::DynamoDB::Table
@@ -73,6 +74,7 @@ functions:
       - sqs:
           arn: !GetAtt MainQueue.Arn
           batchSize: 1
+          functionResponseType: ReportBatchItemFailures
 
   monitorDLQ:
     handler: src/handlers/monitorDLQ.handler

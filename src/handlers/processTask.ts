@@ -30,12 +30,14 @@ export const handler: SQSHandler = async (event) => {
             console.error(`Error processing task ${task.taskId}:`, error);
 
             if (approximateReceiveCount >= 2) {
+                console.log(`MAX RETRIES. Task goes to DLQ ${task.taskId}`)
                 await updateTaskStatus(
                     task.taskId,
                     TaskStatus.FAILED,
                     approximateReceiveCount,
                     error as Error
                 );
+                throw new Error('MAX RETRIES. Task goes to DLQ');
             } else {
                 await updateTaskStatus(
                     task.taskId,

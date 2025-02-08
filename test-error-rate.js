@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const API_ENDPOINT = 'https://wz30sthcpg.execute-api.us-east-1.amazonaws.com/dev/tasks';
+const API_ENDPOINT = 'https://dq79zssfza.execute-api.us-east-1.amazonaws.com/dev/tasks';
 const TOTAL_TESTS = 30;
 const DELAY_BETWEEN_REQUESTS = 1000;
 
@@ -14,13 +14,13 @@ async function runTest() {
     let processing = 0;
     const tasks = [];
 
-    console.log(`Починаємо тестування. Всього запитів: ${TOTAL_TESTS}`);
-    console.log('Очікувана кількість помилок: ~30%\n');
+    console.log(`Start testing. Requests amont: ${TOTAL_TESTS}`);
+    console.log('Expected error rate: ~30%\n');
 
     // Створюємо задачі
     for (let i = 0; i < TOTAL_TESTS; i++) {
         try {
-            console.log(`Відправляємо задачу ${i + 1}/${TOTAL_TESTS}`);
+            console.log(`Send task ${i + 1}/${TOTAL_TESTS}`);
 
             const response = await axios.post(API_ENDPOINT, {
                 message: "Test task"
@@ -30,11 +30,11 @@ async function runTest() {
             await sleep(DELAY_BETWEEN_REQUESTS);
 
         } catch (error) {
-            console.error(`Помилка створення задачі ${i + 1}:`, error.message);
+            console.error(`Error during task creation ${i + 1}:`, error.message);
         }
     }
 
-    console.log('\nЧекаємо 45 секунд на обробку задач...');
+    console.log('\nWaiting 45 sec for tasks to complete...');
     await sleep(45000);
 
     // Перевіряємо результати
@@ -56,21 +56,21 @@ async function runTest() {
                     break;
             }
 
-            console.log(`Задача ${taskId}: ${status} (Retries: ${retryCount})`);
+            console.log(`TASK ${taskId}: ${status} (Retries: ${retryCount})`);
             await sleep(500);
 
         } catch (error) {
-            console.error(`Помилка перевірки задачі ${taskId}:`, error.message);
+            console.error(`Error during task check ${taskId}:`, error.message);
         }
     }
 
     // Виводимо статистику
-    console.log('\nРезультати тестування:');
-    console.log(`Всього задач: ${tasks.length}`);
-    console.log(`Успішно: ${successful} (${(successful/tasks.length*100).toFixed(1)}%)`);
-    console.log(`Невдало: ${failed} (${(failed/tasks.length*100).toFixed(1)}%)`);
+    console.log('\nTest results:');
+    console.log(`Tasks amount: ${tasks.length}`);
+    console.log(`COMPLETED: ${successful} (${(successful/tasks.length*100).toFixed(1)}%)`);
+    console.log(`FAILED: ${failed} (${(failed/tasks.length*100).toFixed(1)}%)`);
     if (processing > 0) {
-        console.log(`В обробці: ${processing} (${(processing/tasks.length*100).toFixed(1)}%)`);
+        console.log(`IN PROGRESS: ${processing} (${(processing/tasks.length*100).toFixed(1)}%)`);
     }
 }
 
