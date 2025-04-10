@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const API_ENDPOINT = 'https://dq79zssfza.execute-api.us-east-1.amazonaws.com/dev/tasks';
+const API_ENDPOINT = ' https://mkb1w5al43.execute-api.us-east-1.amazonaws.com/dev/tasks';
 const TOTAL_TESTS = 30;
 const DELAY_BETWEEN_REQUESTS = 1000;
 
@@ -37,7 +37,6 @@ async function runTest() {
     console.log('\nWaiting 45 sec for tasks to complete...');
     await sleep(45000);
 
-    // Перевіряємо результати
     for (const taskId of tasks) {
         try {
             const response = await axios.get(`${API_ENDPOINT}/${taskId}`);
@@ -64,7 +63,6 @@ async function runTest() {
         }
     }
 
-    // Виводимо статистику
     console.log('\nTest results:');
     console.log(`Tasks amount: ${tasks.length}`);
     console.log(`COMPLETED: ${successful} (${(successful/tasks.length*100).toFixed(1)}%)`);

@@ -1,6 +1,6 @@
 import { APIGatewayProxyHandler } from 'aws-lambda';
 import { SQS, DynamoDB } from 'aws-sdk';
-import { Task, TaskStatus } from '../types';
+import { Task, TaskStatus } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 
 const sqs = new SQS();
@@ -24,13 +24,12 @@ export const handler: APIGatewayProxyHandler = async (event) => {
             retryCount: 0
         };
 
-        // Зберігаємо задачу в DynamoDB
         await dynamoDB.put({
             TableName: process.env.TABLE_NAME!,
             Item: task
         }).promise();
 
-        // Відправляємо задачу в чергу
+
         await sqs.sendMessage({
             QueueUrl: process.env.QUEUE_URL!,
             MessageBody: JSON.stringify(task)
